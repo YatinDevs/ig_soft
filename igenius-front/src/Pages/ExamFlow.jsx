@@ -1,45 +1,38 @@
-import React, { useState } from "react";
+// Pages/ExamFlow.jsx
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
+
+import { useLevelStore } from "../store/levelStore";
 import LevelSelection from "./LevelSelection";
 import WeekSelection from "./WeekSelection";
 import QuestionSetSelection from "./QuestionSetSelection";
 
 export const ExamFlow = ({ view = "levels" }) => {
-  const [currentLevel, setCurrentLevel] = useState(null);
-  const [currentWeek, setCurrentWeek] = useState(null);
   const params = useParams();
   const navigate = useNavigate();
-
-  // Sync with URL params
-  React.useEffect(() => {
-    if (params.level) setCurrentLevel(params.level);
-    if (params.week) setCurrentWeek(params.week);
-  }, [params.level, params.week]);
+  const { clearCurrentData } = useLevelStore();
 
   const handleSelectLevel = (level) => {
-    setCurrentLevel(level);
-    navigate(`/levels/${level}/weeks`);
+    navigate(`/levels/${level.id}/weeks`);
   };
 
-  const handleSelectWeek = (week) => {
-    setCurrentWeek(week);
-    navigate(`/levels/${currentLevel}/weeks/${week}/questions`);
+  const handleSelectWeek = (weekId) => {
+    navigate(`/levels/${params.level}/weeks/${weekId}/questions`);
   };
 
   const handleSelectQuestionSet = (questionSet) => {
     console.log("Selected question set:", questionSet);
-    // Handle question set selection - you can navigate to exam or show modal
+    // Navigate to exam or show modal
+    // navigate(`/exam/${questionSet.id}`);
   };
 
   const handleBackToLevels = () => {
-    setCurrentLevel(null);
-    setCurrentWeek(null);
+    clearCurrentData();
     navigate("/levels");
   };
 
   const handleBackToWeeks = () => {
-    setCurrentWeek(null);
-    navigate(`/levels/${currentLevel}/weeks`);
+    navigate(`/levels/${params.level}/weeks`);
   };
 
   const renderCurrentView = () => {
@@ -49,7 +42,7 @@ export const ExamFlow = ({ view = "levels" }) => {
       case "weeks":
         return (
           <WeekSelection
-            level={currentLevel}
+            level={params.level}
             onSelectWeek={handleSelectWeek}
             onBack={handleBackToLevels}
           />
@@ -57,8 +50,8 @@ export const ExamFlow = ({ view = "levels" }) => {
       case "question-sets":
         return (
           <QuestionSetSelection
-            level={currentLevel}
-            week={currentWeek}
+            levelId={params.level}
+            weekId={params.week}
             onSelectQuestionSet={handleSelectQuestionSet}
             onBack={handleBackToWeeks}
           />

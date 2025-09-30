@@ -4,72 +4,116 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Level;
+use App\Models\Week;
 use Illuminate\Http\Request;
 
 class LevelController extends Controller
 {
     public function index()
     {
-        $levels = Level::withCount(['weeks' => function ($query) {
-                $query->whereHas('questionSets', function ($q) {
-                    $q->where('is_active', true);
-                });
-            }])
-            ->orderBy('order')
-            ->get();
+        try {
+            $levels = Level::withCount(['weeks' => function ($query) {
+                    $query->whereHas('questionSets', function ($q) {
+                        $q->where('is_active', true);
+                    });
+                }])
+                ->orderBy('order')
+                ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $levels
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $levels
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch levels'
+            ], 500);
+        }
     }
 
-    public function show($id)
+    public function show($levelId)
     {
-        // Find level by ID or fail with 404
-        $level = Level::findOrFail($id);
-        
-        $level->load(['weeks' => function ($query) use ($level) {
-            $query->whereHas('questionSets', function ($q) use ($level) {
-                $q->where('level_id', $level->id)
-                  ->where('is_active', true);
-            })->withCount(['questionSets' => function ($q) use ($level) {
-                $q->where('level_id', $level->id)
-                  ->where('is_active', true);
+        try {
+            $level = Level::findOrFail($levelId);
+            
+            $level->load(['weeks' => function ($query) {
+                $query->whereHas('questionSets', function ($q) {
+                    $q->where('is_active', true);
+                })->withCount(['questionSets' => function ($q) {
+                    $q->where('is_active', true);
+                }]);
             }]);
-        }]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $level
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $level
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Level not found'
+            ], 404);
+        }
+    }
+
+    public function weeks($levelId)
+    {
+        try {
+            $level = Level::findOrFail($levelId);
+            
+            $weeks = $level->weeks()
+                ->whereHas('questionSets', function ($query) use ($levelId) {
+                    $query->where('level_id', $levelId)
+                          ->where('is_active', true);
+                })
+                ->withCount(['questionSets' => function ($query) use ($levelId) {
+                    $query->where('level_id', $levelId)
+                          ->where('is_active', true);
+                }])
+                ->orderBy('number')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $weeks,
+                'message' => 'Weeks for level retrieved successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Level not found'
+            ], 404);
+        }
     }
 
     /**
-     * Get all weeks for a specific level
+     * Get question sets for a specific week
      */
-    public function weeks($id)
+    public function questionSets($levelId, $weekId)
     {
-        // Find level by ID or fail with 404
-        $level = Level::findOrFail($id);
-        
-        $weeks = $level->weeks()
-            ->whereHas('questionSets', function ($query) use ($level) {
-                $query->where('level_id', $level->id)
-                      ->where('is_active', true);
-            })
-            ->withCount(['questionSets' => function ($query) use ($level) {
-                $query->where('level_id', $level->id)
-                      ->where('is_active', true);
-            }])
-            ->orderBy('number')
-            ->get();
+        try {
+            $level = Level::findOrFail($levelId);
+            $week = Week::where('id', $weekId)
+                        ->where('level_id', $levelId)
+                        ->firstOrFail();
+            
+            $questionSets = $week->questionSets()
+                ->where('level_id', $levelId)
+                ->where('is_active', true)
+                ->orderBy('order')
+                ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $weeks,
-            'level' => $level->only(['id', 'name', 'description']),
-            'message' => 'Weeks for level retrieved successfully'
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $questionSets,
+                'message' => 'Question sets retrieved successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Question sets not found'
+            ], 404);
+        }
     }
 }

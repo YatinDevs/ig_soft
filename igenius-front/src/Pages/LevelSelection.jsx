@@ -5,7 +5,7 @@ import api from "../services/api";
 const LevelSelection = ({ onSelectLevel }) => {
   const [levels, setLevels] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  console.log(onSelectLevel);
   useEffect(() => {
     const fetchLevels = async () => {
       try {
@@ -35,23 +35,27 @@ const LevelSelection = ({ onSelectLevel }) => {
         Select Your Abacus Level
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {levels.map((level, index) => (
-          <motion.div
-            key={level.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer"
-            onClick={() => onSelectLevel(level)}
-          >
-            <div className="p-6">
-              <h2 className="text-xl font-semibold mb-2">{level.name}</h2>
-              <p className="text-gray-600">{level.description}</p>
-            </div>
-          </motion.div>
-        ))}
+        {levels.map((level, index) => {
+          console.log(level);
+
+          return (
+            <motion.div
+              key={level.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer"
+              onClick={() => onSelectLevel(level)}
+            >
+              <div className="p-6">
+                <h2 className="text-xl font-semibold mb-2">{level.name}</h2>
+                <p className="text-gray-600">{level.description}</p>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );

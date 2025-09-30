@@ -5,11 +5,13 @@ import api from "../services/api";
 const WeekSelection = ({ level, onSelectWeek, onBack }) => {
   const [weeks, setWeeks] = useState([]);
   const [loading, setLoading] = useState(true);
+  console.log(level);
 
   useEffect(() => {
     const fetchWeeks = async () => {
       try {
-        const response = await api.get(`/levels/${level.id}/weeks`);
+        const response = await api.get(`/levels/${level}/weeks`);
+        console.log(response);
         // Make sure we have unique weeks (in case backend still returns duplicates)
         const uniqueWeeks = response.data.data.reduce((acc, week) => {
           if (!acc.find((w) => w.id === week.id)) {

@@ -33,16 +33,15 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     
 
-     // Your existing protected routes
-    Route::get('/levels', [LevelController::class, 'index']);
-    Route::get('/levels/{level}', [LevelController::class, 'show']);
-    Route::get('/levels/{level}/weeks', [LevelController::class, 'weeks']);
-    
+ // routes/api.php
+Route::get('/levels', [LevelController::class, 'index']);
+Route::get('/levels/{level}', [LevelController::class, 'show']);
+Route::get('/levels/{level}/weeks', [LevelController::class, 'weeks']);
+Route::get('/levels/{level}/weeks/{week}/question-sets', [LevelController::class, 'questionSets']); // Add this
     Route::get('/weeks', [WeekController::class, 'index']);
     Route::get('/weeks/{week}', [WeekController::class, 'show']);
     Route::get('/weeks/{week}/question-sets', [WeekController::class, 'questionSets']);
-    Route::get('levels/{level}/weeks/{week}/question-sets', [QuestionSetController::class, 'questionSets']);
-    
+  
     Route::get('/levels/{level}/question-sets', [QuestionSetController::class, 'index']);
     Route::get('/question-sets/{questionSet}', [QuestionSetController::class, 'show']);
     

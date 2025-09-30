@@ -100,5 +100,12 @@ export const adminAPI = {
   updateUser: (userId, userData) => api.put(`/admin/users/${userId}`, userData),
   deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
 };
-
+// services/api.js - Add levelAPI
+export const levelAPI = {
+  getLevels: () => api.get("/levels"),
+  getLevel: (levelId) => api.get(`/levels/${levelId}`),
+  getWeeks: (levelId) => api.get(`/levels/${levelId}/weeks`),
+  getQuestionSets: (levelId, weekId) =>
+    api.get(`/levels/${levelId}/weeks/${weekId}/question-sets`),
+};
 export default api;
