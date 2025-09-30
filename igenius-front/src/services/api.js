@@ -13,12 +13,14 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("auth-storage");
-    if (token) {
+    // Get token directly from localStorage to avoid sync issues
+    const authStorage = localStorage.getItem("auth-storage");
+    if (authStorage) {
       try {
-        const authState = JSON.parse(token);
-        if (authState.state?.accessToken) {
-          config.headers.Authorization = `Bearer ${authState.state.accessToken}`;
+        const authState = JSON.parse(authStorage);
+        const token = authState.state?.accessToken;
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
         }
       } catch (error) {
         console.error("Error parsing auth state:", error);
@@ -29,13 +31,19 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle token refresh and errors
+// Response interceptor to handle token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // If 401 and not already retrying, and not a login/refresh request
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url.includes("/login") &&
+      !originalRequest.url.includes("/refresh")
+    ) {
       originalRequest._retry = true;
 
       try {
@@ -43,22 +51,30 @@ api.interceptors.response.use(
         const response = await api.post("/refresh");
         const newToken = response.data.access_token;
 
-        // Update stored token
-        const authState = JSON.parse(
-          localStorage.getItem("auth-storage") || "{}"
-        );
-        authState.state.accessToken = newToken;
-        localStorage.setItem("auth-storage", JSON.stringify(authState));
+        // Update stored token in localStorage
+        const authStorage = localStorage.getItem("auth-storage");
+        if (authStorage) {
+          const authState = JSON.parse(authStorage);
+          authState.state.accessToken = newToken;
+          localStorage.setItem("auth-storage", JSON.stringify(authState));
+        }
 
-        // Retry original request
+        // Retry original request with new token
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, logout user
+        console.error("Token refresh failed, logging out:", refreshError);
+        // Clear auth state and redirect to login
         localStorage.removeItem("auth-storage");
         window.location.href = "/auth";
         return Promise.reject(refreshError);
       }
+    }
+
+    // If it's a 401 on login/refresh, or already retried, just reject
+    if (error.response?.status === 401) {
+      localStorage.removeItem("auth-storage");
+      window.location.href = "/auth";
     }
 
     return Promise.reject(error);
@@ -66,7 +82,6 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  register: (userData) => api.post("/register", userData),
   login: (credentials) => api.post("/login", credentials),
   logout: () => api.post("/logout"),
   getUser: () => api.get("/user"),
@@ -84,11 +99,6 @@ export const adminAPI = {
   createUser: (userData) => api.post("/admin/users", userData),
   updateUser: (userId, userData) => api.put(`/admin/users/${userId}`, userData),
   deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
-};
-
-export const publicAPI = {
-  getPublicData: () => api.get("/public-data"),
-  getSecuredData: () => api.get("/secured-data"),
 };
 
 export default api;

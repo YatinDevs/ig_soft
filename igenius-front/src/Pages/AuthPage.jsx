@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { RegisterForm } from "../components/auth/RegisterForm";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
 import { LoginForm } from "../components/auth/LoginForm";
 
 export const AuthPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
 
@@ -20,11 +18,8 @@ export const AuthPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="absolute top-0 left-0 w-full h-1/2 bg-blue-600/10 rounded-b-[50%] transform scale-150" />
 
-      {isLogin ? (
-        <LoginForm onToggleMode={() => setIsLogin(false)} />
-      ) : (
-        <RegisterForm onToggleMode={() => setIsLogin(true)} />
-      )}
+      {/* Only show login form - no toggle option */}
+      <LoginForm />
     </div>
   );
 };

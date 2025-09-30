@@ -12,44 +12,6 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-            'role' => 'sometimes|in:user,admin', // Allow role selection during registration
-
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), Response::HTTP_BAD_REQUEST);
-        }
-
-          $userData =[
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ];
-
-    //Only allow admin role if specified and validated
-    if ($request->has('role') && $request->role === 'admin') {
-        // You might want to add additional checks here for admin creation
-        $userData['role'] = $request->role;
-    } else {
-        $userData['role'] = 'user'; // Default role
-    }
-
-        $user = User::create($userData);
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'User successfully registered',
-            'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ], Response::HTTP_CREATED);
-    }
 
     public function login(Request $request)
     {
@@ -94,16 +56,22 @@ class AuthController extends Controller
             'user' => $request->user()
         ]);
     }
-
+    // In AuthController.php - Add this method
     public function refresh(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        
-        $token = $request->user()->createToken('auth_token')->plainTextToken;
+        try {
+            $request->user()->currentAccessToken()->delete();
+            
+            $token = $request->user()->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ]);
+            return response()->json([
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Unable to refresh token'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
     }
 }

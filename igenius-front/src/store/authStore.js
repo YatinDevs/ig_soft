@@ -19,7 +19,6 @@ export const useAuthStore = create(
 
       clearError: () => set({ error: null }),
 
-      // In your auth store, make sure the login function looks like this:
       login: async (email, password) => {
         set({ isLoading: true, error: null });
 
@@ -46,17 +45,14 @@ export const useAuthStore = create(
           let errorMessage = "Login failed";
 
           if (error.response) {
-            // Server responded with error status
             errorMessage =
               error.response.data?.error ||
               error.response.data?.message ||
               `Server error: ${error.response.status}`;
           } else if (error.request) {
-            // Request was made but no response received
             errorMessage =
               "No response from server. Please check your connection.";
           } else {
-            // Something else happened
             errorMessage = error.message || "Login failed";
           }
 
@@ -68,46 +64,6 @@ export const useAuthStore = create(
             isAuthenticated: false,
           });
 
-          return { success: false, error: errorMessage };
-        }
-      },
-      register: async (userData) => {
-        set({ isLoading: true, error: null });
-
-        try {
-          const response = await authAPI.register(userData);
-          const { user, access_token } = response.data;
-
-          set({
-            user,
-            accessToken: access_token,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
-
-          return { success: true, user };
-        } catch (error) {
-          const errorData = error.response?.data;
-          let errorMessage = "Registration failed";
-
-          if (typeof errorData === "object") {
-            // Handle validation errors
-            const firstError = Object.values(errorData)[0];
-            errorMessage = Array.isArray(firstError)
-              ? firstError[0]
-              : firstError;
-          } else if (typeof errorData === "string") {
-            errorMessage = errorData;
-          }
-
-          set({
-            isLoading: false,
-            error: errorMessage,
-            user: null,
-            accessToken: null,
-            isAuthenticated: false,
-          });
           return { success: false, error: errorMessage };
         }
       },
@@ -132,7 +88,10 @@ export const useAuthStore = create(
 
       fetchUser: async () => {
         const { accessToken } = get();
-        if (!accessToken) return;
+        if (!accessToken) {
+          set({ isAuthenticated: false });
+          return;
+        }
 
         set({ isLoading: true });
 
@@ -140,11 +99,41 @@ export const useAuthStore = create(
           const response = await authAPI.getUser();
           set({
             user: response.data.user,
+            isAuthenticated: true,
             isLoading: false,
           });
         } catch (error) {
           console.error("Failed to fetch user:", error);
+          // Clear auth state on failure
+          set({
+            user: null,
+            accessToken: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+        }
+      },
+
+      refreshToken: async () => {
+        const { accessToken } = get();
+        if (!accessToken) {
+          return false;
+        }
+
+        try {
+          const response = await authAPI.refresh();
+          const { access_token } = response.data;
+
+          set({
+            accessToken: access_token,
+            isAuthenticated: true,
+          });
+
+          return true;
+        } catch (error) {
+          console.error("Token refresh failed:", error);
           get().logout();
+          return false;
         }
       },
 

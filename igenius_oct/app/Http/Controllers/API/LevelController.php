@@ -24,13 +24,18 @@ class LevelController extends Controller
         ]);
     }
 
-    public function show(Level $level)
+    public function show($id)
     {
-        $level->load(['weeks' => function ($query) {
-            $query->whereHas('questionSets', function ($q) {
-                $q->where('is_active', true);
-            })->withCount(['questionSets' => function ($q) {
-                $q->where('is_active', true);
+        // Find level by ID or fail with 404
+        $level = Level::findOrFail($id);
+        
+        $level->load(['weeks' => function ($query) use ($level) {
+            $query->whereHas('questionSets', function ($q) use ($level) {
+                $q->where('level_id', $level->id)
+                  ->where('is_active', true);
+            })->withCount(['questionSets' => function ($q) use ($level) {
+                $q->where('level_id', $level->id)
+                  ->where('is_active', true);
             }]);
         }]);
 
@@ -43,8 +48,11 @@ class LevelController extends Controller
     /**
      * Get all weeks for a specific level
      */
-    public function weeks(Level $level)
+    public function weeks($id)
     {
+        // Find level by ID or fail with 404
+        $level = Level::findOrFail($id);
+        
         $weeks = $level->weeks()
             ->whereHas('questionSets', function ($query) use ($level) {
                 $query->where('level_id', $level->id)
@@ -60,6 +68,7 @@ class LevelController extends Controller
         return response()->json([
             'success' => true,
             'data' => $weeks,
+            'level' => $level->only(['id', 'name', 'description']),
             'message' => 'Weeks for level retrieved successfully'
         ]);
     }

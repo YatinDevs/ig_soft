@@ -9,7 +9,7 @@ import {
 } from "@ant-design/icons";
 import { useAuthStore } from "../../store/authStore";
 
-export const LoginForm = ({ onToggleMode }) => {
+export const LoginForm = () => {
   const [form] = Form.useForm();
   const { login, isLoading, error, clearError } = useAuthStore();
 
@@ -101,19 +101,7 @@ export const LoginForm = ({ onToggleMode }) => {
           </Form.Item>
         </Form>
 
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">
-            Don't have an account?{" "}
-            <button
-              type="button"
-              onClick={onToggleMode}
-              className="text-blue-600 hover:text-blue-700 font-medium hover:underline focus:outline-none"
-              disabled={isLoading}
-            >
-              Sign up
-            </button>
-          </p>
-        </div>
+        {/* REMOVED the signup link section entirely */}
       </Card>
     </motion.div>
   );
